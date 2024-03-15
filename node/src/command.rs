@@ -21,12 +21,12 @@ use crate::{
     chain_spec, service,
     service::{new_partial, FullClient},
 };
+use acuity_runtime::RuntimeApi;
+use primitives::Block;
 use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
 
 use std::sync::Arc;
-
-use acuity_runtime::{Block, RuntimeApi};
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {

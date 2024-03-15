@@ -17,7 +17,7 @@
 //! New governance configurations for the Polkadot runtime.
 
 use super::*;
-use frame_support::{parameter_types, traits::EitherOf};
+use frame_support::parameter_types;
 use frame_system::EnsureRootWithSuccess;
 
 mod origins;

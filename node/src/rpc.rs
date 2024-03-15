@@ -36,9 +36,6 @@ use jsonrpsee::RpcModule;
 use primitives::{AccountId, Balance, Block, BlockNumber, Hash, Nonce};
 use sc_client_api::AuxStore;
 use sc_consensus_babe::BabeWorkerHandle;
-use sc_consensus_beefy::communication::notification::{
-    BeefyBestBlockStream, BeefyVersionedFinalityProofStream,
-};
 use sc_consensus_grandpa::{
     FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState,
 };
@@ -74,16 +71,6 @@ pub struct GrandpaDeps<B> {
     pub finality_provider: Arc<FinalityProofProvider<B, Block>>,
 }
 
-/// Dependencies for BEEFY
-pub struct BeefyDeps {
-    /// Receives notifications about finality proof events from BEEFY.
-    pub beefy_finality_proof_stream: BeefyVersionedFinalityProofStream<Block>,
-    /// Receives notifications about best block events from BEEFY.
-    pub beefy_best_block_stream: BeefyBestBlockStream<Block>,
-    /// Executor to drive the subscription manager in the BEEFY RPC handler.
-    pub subscription_executor: SubscriptionTaskExecutor,
-}
-
 /// Full client dependencies.
 pub struct FullDeps<C, P, SC, B> {
     /// The client instance to use.
@@ -100,8 +87,6 @@ pub struct FullDeps<C, P, SC, B> {
     pub babe: BabeDeps,
     /// GRANDPA specific dependencies.
     pub grandpa: GrandpaDeps<B>,
-    /// BEEFY specific dependencies.
-    pub beefy: BeefyDeps,
     /// Shared statement store reference.
     pub statement_store: Arc<dyn sp_statement_store::StatementStore>,
     /// The backend used by the node.
@@ -120,9 +105,8 @@ pub fn create_full<C, P, SC, B>(
         deny_unsafe,
         babe,
         grandpa,
-        beefy,
         statement_store,
-        backend,
+        backend: _,
         mixnet_api,
     }: FullDeps<C, P, SC, B>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
@@ -136,7 +120,6 @@ where
         + Send
         + 'static,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-    C::Api: mmr_rpc::MmrRuntimeApi<Block, <Block as sp_runtime::traits::Block>::Hash, BlockNumber>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
     C::Api: BabeApi<Block>,
     C::Api: BlockBuilder<Block>,
@@ -145,10 +128,8 @@ where
     B: sc_client_api::Backend<Block> + Send + Sync + 'static,
     B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 {
-    use mmr_rpc::{Mmr, MmrApiServer};
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
     use sc_consensus_babe_rpc::{Babe, BabeApiServer};
-    use sc_consensus_beefy_rpc::{Beefy, BeefyApiServer};
     use sc_consensus_grandpa_rpc::{Grandpa, GrandpaApiServer};
     use sc_rpc::{
         dev::{Dev, DevApiServer},
@@ -183,18 +164,6 @@ where
     io.merge(ChainSpec::new(chain_name, genesis_hash, properties).into_rpc())?;
 
     io.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
-    // Making synchronous calls in light client freezes the browser currently,
-    // more context: https://github.com/paritytech/substrate/pull/3480
-    // These RPCs should use an asynchronous caller instead.
-    io.merge(
-        Mmr::new(
-            client.clone(),
-            backend
-                .offchain_storage()
-                .ok_or_else(|| "Backend doesn't provide an offchain storage")?,
-        )
-        .into_rpc(),
-    )?;
     io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
     io.merge(
         Babe::new(
@@ -236,15 +205,6 @@ where
         let mixnet = sc_rpc::mixnet::Mixnet::new(mixnet_api).into_rpc();
         io.merge(mixnet)?;
     }
-
-    io.merge(
-        Beefy::<Block>::new(
-            beefy.beefy_finality_proof_stream,
-            beefy.beefy_best_block_stream,
-            beefy.subscription_executor,
-        )?
-        .into_rpc(),
-    )?;
 
     Ok(io)
 }
