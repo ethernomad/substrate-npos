@@ -1,7 +1,7 @@
 //! Service implementation. Specialized wrapper over substrate service.
 
 use crate::cli::Cli;
-use acuity_runtime::RuntimeApi;
+use npos_runtime::RuntimeApi;
 use codec::Encode;
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 use frame_system_rpc_runtime_api::AccountNonceApi;
@@ -74,9 +74,9 @@ pub fn fetch_nonce(client: &FullClient, account: sp_core::sr25519::Pair) -> u32 
 pub fn create_extrinsic(
     client: &FullClient,
     sender: sp_core::sr25519::Pair,
-    function: impl Into<acuity_runtime::RuntimeCall>,
+    function: impl Into<npos_runtime::RuntimeCall>,
     nonce: Option<u32>,
-) -> acuity_runtime::UncheckedExtrinsic {
+) -> npos_runtime::UncheckedExtrinsic {
     let function = function.into();
     let genesis_hash = client
         .block_hash(0)
@@ -87,32 +87,32 @@ pub fn create_extrinsic(
     let best_block = client.chain_info().best_number;
     let nonce = nonce.unwrap_or_else(|| fetch_nonce(client, sender.clone()));
 
-    let period = acuity_runtime::BlockHashCount::get()
+    let period = npos_runtime::BlockHashCount::get()
         .checked_next_power_of_two()
         .map(|c| c / 2)
         .unwrap_or(2) as u64;
     let tip = 0;
-    let extra: acuity_runtime::SignedExtra = (
-        frame_system::CheckNonZeroSender::<acuity_runtime::Runtime>::new(),
-        frame_system::CheckSpecVersion::<acuity_runtime::Runtime>::new(),
-        frame_system::CheckTxVersion::<acuity_runtime::Runtime>::new(),
-        frame_system::CheckGenesis::<acuity_runtime::Runtime>::new(),
-        frame_system::CheckEra::<acuity_runtime::Runtime>::from(generic::Era::mortal(
+    let extra: npos_runtime::SignedExtra = (
+        frame_system::CheckNonZeroSender::<npos_runtime::Runtime>::new(),
+        frame_system::CheckSpecVersion::<npos_runtime::Runtime>::new(),
+        frame_system::CheckTxVersion::<npos_runtime::Runtime>::new(),
+        frame_system::CheckGenesis::<npos_runtime::Runtime>::new(),
+        frame_system::CheckEra::<npos_runtime::Runtime>::from(generic::Era::mortal(
             period,
             best_block.saturated_into(),
         )),
-        frame_system::CheckNonce::<acuity_runtime::Runtime>::from(nonce),
-        frame_system::CheckWeight::<acuity_runtime::Runtime>::new(),
-        pallet_transaction_payment::ChargeTransactionPayment::<acuity_runtime::Runtime>::from(tip),
+        frame_system::CheckNonce::<npos_runtime::Runtime>::from(nonce),
+        frame_system::CheckWeight::<npos_runtime::Runtime>::new(),
+        pallet_transaction_payment::ChargeTransactionPayment::<npos_runtime::Runtime>::from(tip),
     );
 
-    let raw_payload = acuity_runtime::SignedPayload::from_raw(
+    let raw_payload = npos_runtime::SignedPayload::from_raw(
         function.clone(),
         extra.clone(),
         (
             (),
-            acuity_runtime::VERSION.spec_version,
-            acuity_runtime::VERSION.transaction_version,
+            npos_runtime::VERSION.spec_version,
+            npos_runtime::VERSION.transaction_version,
             genesis_hash,
             best_hash,
             (),
@@ -122,10 +122,10 @@ pub fn create_extrinsic(
     );
     let signature = raw_payload.using_encoded(|e| sender.sign(e));
 
-    acuity_runtime::UncheckedExtrinsic::new_signed(
+    npos_runtime::UncheckedExtrinsic::new_signed(
         function,
         sp_runtime::AccountId32::from(sender.public()).into(),
-        acuity_runtime::Signature::Sr25519(signature),
+        npos_runtime::Signature::Sr25519(signature),
         extra,
     )
 }

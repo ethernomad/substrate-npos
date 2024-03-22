@@ -18,7 +18,7 @@
 
 //! Substrate chain configurations.
 
-use acuity_runtime::{
+use npos_runtime::{
     constants::currency::*, wasm_binary_unwrap, Block, MaxNominations, SessionKeys, StakerStatus,
 };
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
@@ -36,7 +36,7 @@ use sp_runtime::{
     Perbill,
 };
 
-pub use acuity_runtime::RuntimeGenesisConfig;
+pub use npos_runtime::RuntimeGenesisConfig;
 pub use primitives::{AccountId, Balance, Signature};
 
 type AccountPublic = <Signature as Verify>::Signer;
@@ -62,8 +62,8 @@ pub struct Extensions {
 
 /// Specialized `ChainSpec`.
 pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig, Extensions>;
-pub fn acuity_config() -> Result<ChainSpec, String> {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/acuity.json")[..])
+pub fn npos_config() -> Result<ChainSpec, String> {
+    ChainSpec::from_json_bytes(&include_bytes!("../res/substrate-npos.json")[..])
 }
 
 fn session_keys(
@@ -347,7 +347,7 @@ pub fn testnet_genesis(
         },
         "sudo": { "key": Some(root_key.clone()) },
         "babe": {
-            "epochConfig": Some(acuity_runtime::BABE_GENESIS_EPOCH_CONFIG),
+            "epochConfig": Some(npos_runtime::BABE_GENESIS_EPOCH_CONFIG),
         },
         "nominationPools": {
             "minCreateBond": 10 * DOLLARS,
@@ -400,33 +400,33 @@ pub fn local_testnet_config() -> ChainSpec {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use crate::service::{new_full_base, NewFullBase};
+    // use crate::service::{new_full_base, NewFullBase};
     use sp_runtime::BuildStorage;
 
     /// Local testnet config (single validator - Alice).
-    pub fn integration_test_config_with_single_authority() -> ChainSpec {
-        ChainSpec::builder(wasm_binary_unwrap(), Default::default())
-            .with_name("Integration Test")
-            .with_id("test")
-            .with_chain_type(ChainType::Development)
-            .with_genesis_config_patch(testnet_genesis(
-                vec![authority_keys_from_seed("Alice")],
-                vec![],
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                None,
-            ))
-            .build()
-    }
+    // pub fn integration_test_config_with_single_authority() -> ChainSpec {
+    //     ChainSpec::builder(wasm_binary_unwrap(), Default::default())
+    //         .with_name("Integration Test")
+    //         .with_id("test")
+    //         .with_chain_type(ChainType::Development)
+    //         .with_genesis_config_patch(testnet_genesis(
+    //             vec![authority_keys_from_seed("Alice")],
+    //             vec![],
+    //             get_account_id_from_seed::<sr25519::Public>("Alice"),
+    //             None,
+    //         ))
+    //         .build()
+    // }
 
     /// Local testnet config (multivalidator Alice + Bob).
-    pub fn integration_test_config_with_two_authorities() -> ChainSpec {
-        ChainSpec::builder(wasm_binary_unwrap(), Default::default())
-            .with_name("Integration Test")
-            .with_id("test")
-            .with_chain_type(ChainType::Development)
-            .with_genesis_config_patch(local_testnet_genesis())
-            .build()
-    }
+    // pub fn integration_test_config_with_two_authorities() -> ChainSpec {
+    //     ChainSpec::builder(wasm_binary_unwrap(), Default::default())
+    //         .with_name("Integration Test")
+    //         .with_id("test")
+    //         .with_chain_type(ChainType::Development)
+    //         .with_genesis_config_patch(local_testnet_genesis())
+    //         .build()
+    // }
 
     #[test]
     fn test_create_development_chain_spec() {

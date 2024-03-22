@@ -21,7 +21,7 @@ use crate::{
     chain_spec, service,
     service::{new_partial, FullClient},
 };
-use acuity_runtime::RuntimeApi;
+use npos_runtime::RuntimeApi;
 use primitives::Block;
 use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
@@ -30,7 +30,7 @@ use std::sync::Arc;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
-        "Acuity".into()
+        "Substrate NPoS".into()
     }
 
     fn impl_version() -> String {
@@ -55,7 +55,7 @@ impl SubstrateCli for Cli {
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
         let spec = match id {
-            "" | "acuity" => Box::new(chain_spec::acuity_config()?),
+            "" | "npos" => Box::new(chain_spec::npos_config()?),
             "dev" => Box::new(chain_spec::development_config()),
             "local" => Box::new(chain_spec::local_testnet_config()),
             "staging" => Box::new(chain_spec::staging_testnet_config()),
